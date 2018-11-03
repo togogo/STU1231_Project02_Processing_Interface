@@ -2,8 +2,13 @@ import processing.serial.*;
 import java.util.Arrays;
 import java.lang.String;
 
+PFont myFont;
+
+boolean dummyBreatheMode;//
+
 Serial myPort;  // Create object from Serial class
 String val;     // Data received from the serial port
+
 int ellipseSize = 0;
 int tempSize = 0;
 
@@ -15,35 +20,34 @@ int serialCount = 0;     // A count of how many bytes we receive
 float number;
 int flex, x, y, z;//
 
-//String[] valList = new String[dataSize];
-
-
 int counter;//for debugging purposes
 
-//For information...
-//ArrayList<String> elephantList = (ArrayList<String>)Arrays.asList(str.split(","));
 ArrayList<String> incomingList;
 
 void setup()
 {
-  // I know that the first port in the serial list on my mac
-  // is Serial.list()[0].
-  // On Windows machines, this generally opens COM1.
-  // Open whatever port is the one you're using.
+  
   String portName = Serial.list()[7]; //change the 0 to a 1 or 2 etc. to match your port
   myPort = new Serial(this, portName, 9600);
   printArray(Serial.list());
 
-  size(414, 896, P3D);
+  //size(1080, 1920, P3D);
+  size(540, 960, P3D);
   ellipseMode(CENTER);
 
-  //println(Serial.list());
+myFont = createFont("axis_light_48.vlw", 20);
+textFont(myFont);
+
 }
 
 void draw()
 {
 
   background(255);
+  
+  //typography stuff
+  text("Target Orientation:", 20, 30);
+  text("Breathe Rhythm:", 20, height/2 + 30);
 
   //My first attempt for the prototype
   /*
@@ -146,8 +150,6 @@ void draw()
         tempList[i] = tempList[i].replaceAll("\\D+", "");
         //println(tempList[0]);
         serialInArray[i] = Integer.valueOf(tempList[i]);
-        
-        
       }
     }
   }
@@ -158,14 +160,38 @@ void draw()
   //ellipseSize = tempSize;
 
   fill(0);
-  ellipse(width/2, height/2, ellipseSize/3 + 200, ellipseSize/3 + 200);
   
+
+  drawBreathe(width/2, height/2 + height/4, ellipseSize/2, 300);
+  drawFigure(width/2, 250, 0);
+}
+
+void drawBreathe(int _x, int _y, int _breatheVal, int _baseR){
+  ellipse(_x, _y, _breatheVal/3 + _baseR, _breatheVal/3 + _baseR);
+}
+
+void drawFigure(int _x, int _y, int _z) {
   pushMatrix();
-  translate(width/2, 200, 0);
+  translate(_x, _y, _z);
   noFill();
   rotateX(radians(serialInArray[1]));
   rotateY(radians(serialInArray[2]));
   rotateZ(radians(serialInArray[3]));
-  box(100);
+  box(100, 100, 50);
+  translate(0, -100, 0);
+  box(70, 70, 50);
+  translate(-80, 100, 0);
+  box(30, 100, 30);
+  translate(160, 0, 0);
+  box(30, 100, 30);
+  translate(-50, 110, 0);
+  box(30, 100, 30);
+  translate(-60, 0, 0);
+  box(30, 100, 30);
   popMatrix();
+}
+
+float breathe(){
+  float breatheVal = 0;
+  return breatheVal;
 }
