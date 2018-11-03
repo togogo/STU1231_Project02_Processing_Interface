@@ -4,7 +4,24 @@ import java.lang.String;
 
 PFont myFont;
 
-boolean dummyBreatheMode;//
+//breathing function related stuff
+boolean dummyBreatheMode = true;//toggle the breathe function
+float radCounters = 0;//radian counter for the breathe function
+float breatheMagnitude = 50;//how much magnitude I want for the breathing to happen
+float radIncrement = TWO_PI/(360*1.3);//how much increment I want
+
+//alert mode
+boolean alert;//watches alert mode or not
+
+//background
+color alertBG1 = color(146, 7, 131);
+color alertBG2 = color(215, 0, 81);
+color normalBG1 = color(23, 42, 136);
+color normalBG2 = color(96, 27, 130);
+color white = color(255);
+color black = color(0);
+float lerpCount = 0;
+
 
 Serial myPort;  // Create object from Serial class
 String val;     // Data received from the serial port
@@ -22,12 +39,14 @@ int flex, x, y, z;//
 
 int counter;//for debugging purposes
 
+
+
 ArrayList<String> incomingList;
 
 void setup()
 {
-  
-  String portName = Serial.list()[7]; //change the 0 to a 1 or 2 etc. to match your port
+
+  String portName = Serial.list()[8]; //change the 0 to a 1 or 2 etc. to match your port
   myPort = new Serial(this, portName, 9600);
   printArray(Serial.list());
 
@@ -35,19 +54,30 @@ void setup()
   size(540, 960, P3D);
   ellipseMode(CENTER);
 
-myFont = createFont("axis_light_48.vlw", 20);
-textFont(myFont);
-
+  myFont = createFont("axis_light_48.vlw", 20);
+  textFont(myFont);
 }
 
 void draw()
 {
 
-  background(255);
-  
+  color upper = lerpColor(normalBG1, alertBG1, radCounters);
+  color lower = lerpColor(normalBG2, alertBG2, radCounters);
+
+  //background(255);
+  beginShape();
+  fill(upper);
+  vertex(0, 0);
+  vertex(width, 0);
+  fill(lower);
+
+  vertex(width, height);
+  vertex(0, height);
+  endShape(CLOSE);
+
   //typography stuff
   text("Target Orientation:", 20, 30);
-  text("Breathe Rhythm:", 20, height/2 + 30);
+  text("Target Respiration:", 20, height/2 + 30);
 
   //My first attempt for the prototype
   /*
@@ -160,14 +190,20 @@ void draw()
   //ellipseSize = tempSize;
 
   fill(0);
-  
+
 
   drawBreathe(width/2, height/2 + height/4, ellipseSize/2, 300);
   drawFigure(width/2, 250, 0);
 }
 
-void drawBreathe(int _x, int _y, int _breatheVal, int _baseR){
-  ellipse(_x, _y, _breatheVal/3 + _baseR, _breatheVal/3 + _baseR);
+void drawBreathe(int _x, int _y, int _breatheVal, int _baseR) {
+
+
+  if (dummyBreatheMode == true) {
+    ellipse(_x, _y, breathe() +  _baseR, breathe() + _baseR);
+  } else if (dummyBreatheMode == false) {
+    ellipse(_x, _y, _breatheVal/3 + _baseR, _breatheVal/3 + _baseR);
+  }
 }
 
 void drawFigure(int _x, int _y, int _z) {
@@ -191,7 +227,25 @@ void drawFigure(int _x, int _y, int _z) {
   popMatrix();
 }
 
-float breathe(){
-  float breatheVal = 0;
+void keyPressed() {
+  if (key == 'a') {
+    if (alert == true) {
+      println("alert mode toggled");
+      alert = false;
+    } else {
+      alert  = true;
+      println("alert mode untoggled");
+    }
+  }
+}
+
+/*
+float lerpCount() {
+}
+*/
+
+float breathe() {
+  radCounters = radCounters + radIncrement;//always increase the radCounter
+  float breatheVal = breatheMagnitude*sin(radCounters);
   return breatheVal;
 }
