@@ -23,6 +23,8 @@ float tempBreatheVal;//stores the breatheVal for smooth transition
 //alert mode
 boolean alert;//watches alert mode or not
 
+boolean down;//detects weather the baby is looking down
+
 //background
 color alertBG1 = color(146, 7, 131);
 color alertBG2 = color(215, 0, 81);
@@ -98,7 +100,22 @@ void draw()
   //typography stuff
   fill(white);
   text("Target Orientation:", 20, 30);
+  
+    if(serialInArray[1] >= 160){
+    fill(255, 0, 0);
+    ellipse(28, 48, 20, 20);
+    text("Face down", 40, 55);
+    
+  }
+  
+  fill(white);
   text("Target Respiration:", 20, height/2 + 30);
+  
+  if(breathing == false){
+    fill(255, 0, 0);
+    ellipse(28, height/2 + 48, 20, 20);
+    text("Not detected", 40, height/2 + 55);
+  }
 
   //counter++;
   if (myPort.available() > 0) 
@@ -159,10 +176,18 @@ void draw()
 
 void drawBreathe(int _x, int _y, int _breatheVal, int _baseR) {
 
+  directionalLight(126, 126, 126, 0, 0, -1);
+  ambientLight(160, 160, 160);
+  
   //noFill();
   fill(white);
   if (dummyBreatheMode == true) {
-    ellipse(_x, _y, breathe() +  _baseR + _breatheVal*sensitivity, breathe() + _baseR + _breatheVal*sensitivity);
+    //ellipse(_x, _y, breathe() +  _baseR + _breatheVal*sensitivity, breathe() + _baseR + _breatheVal*sensitivity);
+    pushMatrix();
+    translate(_x, _y);
+    noStroke();
+    sphere((breathe() + _baseR + _breatheVal*sensitivity)/2);
+    popMatrix();
   } else if (dummyBreatheMode == false) {
     ellipse(_x, _y, _breatheVal + _baseR, _breatheVal + _baseR);//not really used anymore
   }
@@ -170,6 +195,18 @@ void drawBreathe(int _x, int _y, int _breatheVal, int _baseR) {
 
 void drawFigure(int _x, int _y, int _z) {
   //noStroke();
+  
+  
+  //attempt
+  float roll  = serialInArray[3];
+  float pitch = serialInArray[2];
+  float yaw   = serialInArray[1];
+  float c1 = cos(radians(roll) - PI);
+  float s1 = sin(radians(roll) - PI);
+  float c2 = cos(radians(pitch) - PI); // intrinsic rotation
+  float s2 = sin(radians(pitch) - PI);
+  float c3 = cos(radians(yaw) - PI);
+  float s3 = sin(radians(yaw) - PI);
 
   /*
   int directionR = (upper >> 24) & 0xFF;
@@ -182,20 +219,50 @@ void drawFigure(int _x, int _y, int _z) {
    
    //directionalLight(directionR, directionG, directionB, 0, 0, -1);
    //ambientLight(lowerR, lowerG, lowerB);
+   
+   second a
    */
-  directionalLight(126, 126, 126, 0, 0, -1);
-  ambientLight(102, 102, 102);
+  //directionalLight(126, 126, 126, 0, 0, -1);
+  //ambientLight(102, 102, 102);
 
   pushMatrix();
   translate(_x, _y, _z);
   //noFill();
   noStroke();
-  rotateX(radians(serialInArray[1]));
-  rotateY(radians(serialInArray[2]));
-  rotateZ(radians(serialInArray[3]));
+  
+  //rotateX(c1*s1);//initial attempt
+  //rotateY(c2*s2);//initial attempt
+  //rotateZ(c3*s3);//initial attempt
+  
+  //rotateX(c1);//initial attempt
+  //rotateY(s2);//initial attempt
+  //rotateZ(c3);//initial attempt
+  
+  rotateX(radians(pitch));//initial attempt
+  rotateY(radians(yaw));//initial attempt
+  rotateZ(radians(roll));//initial attempt
+  
+  //println(yaw);
+  
+  //rotateX(radians(serialInArray[1]));//initial attempt
+  //rotateY(radians(serialInArray[2]));//initial attempt
+  //rotateZ(radians(serialInArray[3]));//initial attempt
+  
+  
+  //println(serialInArray[1]);
+  
+  /*
+  applyMatrix( c2*c3, s1*s3+c1*c3*s2, c3*s1*s2-c1*s3, 0,
+               -s2, c1*c2, c2*s1, 0,
+               c2*s3, c1*s2*s3-c3*s1, c1*c3+s1*s2*s3, 0,
+               0, 0, 0, 1);
+  */
   box(100, 100, 50);//torso
   translate(0, -100, 0);
   box(70, 70, 50);//head
+  translate(0, 0, 30);
+  box(10, 40, 10);//nose
+  translate(0, 0, -30);
   //sphere(70);//head
   translate(-80, 100, 0);
   box(30, 100, 30);
