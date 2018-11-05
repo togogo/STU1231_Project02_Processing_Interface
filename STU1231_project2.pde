@@ -3,12 +3,22 @@ import java.util.Arrays;
 import java.lang.String;
 
 PFont myFont;
+PImage splashScreen;
+
+float sensitivity = 1.5;//sensitivity of the flex censor
+
+//splash screen function
+boolean splashToggle = false;//toggles the splash screen
+float splashCounter = 0;
+float splashIncrement = 4;
 
 //breathing function related stuff
 boolean dummyBreatheMode = true;//toggle the breathe function
+boolean breathing = true;//toggles the breathe itself
 float radCounters = 0;//radian counter for the breathe function
 float breatheMagnitude = 50;//how much magnitude I want for the breathing to happen
 float radIncrement = TWO_PI/(360*1.3);//how much increment I want
+float tempBreatheVal;//stores the breatheVal for smooth transition
 
 //alert mode
 boolean alert;//watches alert mode or not
@@ -21,6 +31,9 @@ color normalBG2 = color(96, 27, 130);
 color white = color(255);
 color black = color(0);
 float lerpCount = 0;
+
+color upper;
+color lower;
 
 
 Serial myPort;  // Create object from Serial class
@@ -46,23 +59,30 @@ ArrayList<String> incomingList;
 void setup()
 {
 
-  String portName = Serial.list()[8]; //change the 0 to a 1 or 2 etc. to match your port
-  myPort = new Serial(this, portName, 9600);
   printArray(Serial.list());
+  String portName = Serial.list()[6]; //change the 0 to a 1 or 2 etc. to match your port
+  myPort = new Serial(this, portName, 9600);
+
 
   //size(1080, 1920, P3D);
   size(540, 960, P3D);
+  smooth(3);
   ellipseMode(CENTER);
 
   myFont = createFont("axis_light_48.vlw", 20);
   textFont(myFont);
+
+  splashScreen = loadImage("splash.jpg");
 }
 
 void draw()
 {
 
-  color upper = lerpColor(normalBG1, alertBG1, radCounters);
-  color lower = lerpColor(normalBG2, alertBG2, radCounters);
+  upper = lerpColor(normalBG1, alertBG1, lerpCount);
+  lower = lerpColor(normalBG2, alertBG2, lerpCount);
+  lerpCount();
+
+  splashCount();
 
   //background(255);
   beginShape();
@@ -76,84 +96,16 @@ void draw()
   endShape(CLOSE);
 
   //typography stuff
+  fill(white);
   text("Target Orientation:", 20, 30);
   text("Target Respiration:", 20, height/2 + 30);
 
-  //My first attempt for the prototype
-  /*
-  //print(Serial.list()[]);
-   //println(Serial.list());
-   if ( myPort.available() > 0) 
-   {  // If data is available,
-   val = myPort.readStringUntil('\n');         // read it and store it in val
-   //println("hi");
-   } 
-   println(val); //print it out in the console
-   //int ellipseSize = Integer.parseInt(val);
-   if (val == null) {
-   tempSize = ellipseSize;
-   } else {
-   val = val.replaceAll("\\D+", "");
-   ellipseSize = Integer.valueOf(val);
-   tempSize = Integer.valueOf(val);
-   }
-   
-   ellipseSize = tempSize;
-   */
-
-
-  //Second Attempt, slightly sophisticated
-  /*
-  if ( myPort.available() > 0) {  // If data is available,
-   val = myPort.readStringUntil('\n');         // read it and store it in val
-   println(val);
-   
-   if (val == null) {
-   number = 0;//fill with placeholder 0 to avoid null data coming in
-   } else {
-   //number = Integer.parseInt(val);
-   val = val.replaceAll("\\D+", "");
-   number = Integer.valueOf(val);
-   }
-   
-   //if (val != null) {
-   
-   serialInArray[serialCount] = (int)number;
-   
-   serialCount++;
-   
-   if (serialCount > 3 ) {
-   flex = serialInArray[0];
-   x = serialInArray[1];
-   y = serialInArray[2];
-   z = serialInArray[3];
-   
-   
-   print("flex: ");
-   println(flex);
-   print("  x: ");
-   println(x);
-   print(  "y: ");
-   println(y);
-   print(  "z: ");
-   println(z);
-   println("------------");
-   
-   // Reset serialCount:
-   serialCount = 0;
-   }
-   }
-   
-   ellipseSize = flex;//need to make this optimized again...
-   */
-
-  //third attempt
   //counter++;
-  if ( myPort.available() > 0) 
+  if (myPort.available() > 0) 
   {  
     // If data is available,
-    val = myPort.readStringUntil('\n');         // read it and store it in val
-
+    val = myPort.readStringUntil('\n');// read it and store it in val
+    //println(val);
     //incomingList = (ArrayList<String>)Arrays.asList(val.split(","));
     //List<String> elephantList = Arrays.asList(val.split(","));
     //incomingList = Arrays.asList(val.split(","));
@@ -184,38 +136,67 @@ void draw()
     }
   }
   //ellipseSize = Integer.valueOf(valList[0]);
-  //println(radians(serialInArray[2]));
+  //println(radians(serialInArray[0]));
   ellipseSize = serialInArray[0];
 
   //ellipseSize = tempSize;
 
-  fill(0);
+  fill(white);
+  stroke(white);
 
 
+  stroke(255, (255 - splashCounter));
   drawBreathe(width/2, height/2 + height/4, ellipseSize/2, 300);
-  drawFigure(width/2, 250, 0);
+  drawFigure(width/2, 250, 120);
+
+  //splash screen feature
+  pushMatrix();
+  translate(0, 0, 300);
+  tint(255, splashCounter);
+  image(splashScreen, 0, 0, width, height);
+  popMatrix();
 }
 
 void drawBreathe(int _x, int _y, int _breatheVal, int _baseR) {
 
-
+  //noFill();
+  fill(white);
   if (dummyBreatheMode == true) {
-    ellipse(_x, _y, breathe() +  _baseR, breathe() + _baseR);
+    ellipse(_x, _y, breathe() +  _baseR + _breatheVal*sensitivity, breathe() + _baseR + _breatheVal*sensitivity);
   } else if (dummyBreatheMode == false) {
-    ellipse(_x, _y, _breatheVal/3 + _baseR, _breatheVal/3 + _baseR);
+    ellipse(_x, _y, _breatheVal + _baseR, _breatheVal + _baseR);//not really used anymore
   }
 }
 
 void drawFigure(int _x, int _y, int _z) {
+  //noStroke();
+
+  /*
+  int directionR = (upper >> 24) & 0xFF;
+   int directionG = (upper >> 16) & 0xFF;
+   int directionB = (upper >> 8) & 0xFF;
+   
+   int lowerR = (lower >> 24) & 0xFF;
+   int lowerG = (lower >> 16) & 0xFF;
+   int lowerB = (lower >> 8) & 0xFF;
+   
+   //directionalLight(directionR, directionG, directionB, 0, 0, -1);
+   //ambientLight(lowerR, lowerG, lowerB);
+   */
+  directionalLight(126, 126, 126, 0, 0, -1);
+  ambientLight(102, 102, 102);
+
   pushMatrix();
   translate(_x, _y, _z);
-  noFill();
+  //noFill();
+  noStroke();
   rotateX(radians(serialInArray[1]));
   rotateY(radians(serialInArray[2]));
   rotateZ(radians(serialInArray[3]));
-  box(100, 100, 50);
+  box(100, 100, 50);//torso
   translate(0, -100, 0);
-  box(70, 70, 50);
+  box(70, 70, 50);//head
+  //sphere(70);//head
   translate(-80, 100, 0);
   box(30, 100, 30);
   translate(160, 0, 0);
@@ -237,15 +218,65 @@ void keyPressed() {
       println("alert mode untoggled");
     }
   }
+
+  if (key == 'b') {
+    if (breathing == true) {
+      println("breathing");
+      breathing = false;
+    } else {
+      breathing  = true;
+      println("not breathing");
+    }
+  }
+
+  if (key == 's') {
+    if (splashToggle == true) {
+      println("splash screen off");
+      splashToggle = false;
+    } else {
+      splashToggle  = true;
+      println("splash screen on");
+    }
+  }
 }
 
-/*
-float lerpCount() {
+
+void splashCount() {
+  if (splashToggle == true) {
+    if (splashCounter <= 255) {
+      splashCounter = splashCounter + splashIncrement;
+    }
+  } else {
+    if (splashCounter > 0) {
+      splashCounter = splashCounter - splashIncrement;
+    }
+  }
 }
-*/
+
+
+void lerpCount() {
+  if (alert == true) {
+    if (lerpCount <= 1) {
+      lerpCount = lerpCount + radIncrement;
+    }
+  } else {
+    if (lerpCount > 0) {
+      lerpCount = lerpCount - radIncrement;
+    }
+  }
+}
+
 
 float breathe() {
-  radCounters = radCounters + radIncrement;//always increase the radCounter
-  float breatheVal = breatheMagnitude*sin(radCounters);
+  //radCounters = radCounters + radIncrement;//always increase the radCounter
+  float breatheVal = 0;
+  if (breathing == true) {
+    radCounters = radCounters + radIncrement;//always increase the radCounter
+    breatheVal = breatheMagnitude*sin(radCounters);//when breathing
+    tempBreatheVal = breatheVal;
+  } else if (breathing == false) {
+    //breatheVal = (breatheMagnitude/10)*sin(radCounters) + tempBreatheVal;//when not breathing
+    breatheVal = tempBreatheVal;
+  }
   return breatheVal;
 }
